@@ -23,13 +23,13 @@ def createDictionaryForFile(file):
 			if word not in answer:
 				answer[word] = 0
 			answer[word] += 1
-	print(answer)
-	for word in answer:
-		print(answer[word], '\t',word)
+	#print(answer)
+	#for word in answer:
+		#print(answer[word], '\t',word)
 	sortedDict = sorted(answer.items(), key=lambda item: item[1],reverse = True)
-	for i in range(len(sortedDict[:20])):
-		print(i)
-		print(sortedDict[i])
+	#for i in range(len(sortedDict[:20])):
+		#print(i)
+		#print(sortedDict[i])
 def getAllEssays():
 	dir = os.listdir("Data2014")
 	allEssays = []
@@ -57,16 +57,22 @@ def main():
 
 	#get List of all stop words
 	stopWords = createStopList()
-	#get 2d list of all words in all
+	end1 = time.time()
+	print("Time to load stop words  (seconds):\t",round(end1 - start,15),'\telap:\t',round(end1-start,15))
+	#get 2d list of all words in all essays
 	allEssays = getAllEssays()
+	end2 = time.time()
+	print("Time to load all essays  (seconds):\t",round(end2 - start,15),'\telap:\t',round(end2-end1,15))
 
 	for i in range(len(allEssays)):
 		#print(len(allEssays[i]))
 		allEssays[i] = removeStops(allEssays[i],stopWords)
 		#print(len(allEssays[i]))
 		#print("-0----")
+	end3 = time.time()
+	print("Time to remove stop words(seconds):\t",round(end3 - start,15),'\telap:\t',round(end3-end2,15))
 	for i in range(1):
-		print(allEssays[i])
+		#print(allEssays[i])
 		createDictionaryForFile(allEssays[i])
 
 
@@ -76,7 +82,7 @@ def main():
 
 	print("essays checked:\t",len(allEssays))
 	end = time.time()
-	print("Elapsed Time(seconds): ",end - start)
+	print("Total Elapsed Time       (seconds):\t",round(end - start,15))
 
 
 
