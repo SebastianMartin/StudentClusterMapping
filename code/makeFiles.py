@@ -2,7 +2,7 @@ import sys, os
 import time
 import math
 from collections import defaultdict
-
+import matplotlib.pyplot as plt
 
 fullListFreq = {}
 
@@ -158,6 +158,19 @@ def main():
 	print("Time to create TF's      (seconds):\t",round(end6 - start,15),'\telap:\t',round(end6-end5,15))
 
 
+	'''for tf in tfComputations:
+		for a in tf:
+			print(a,'\t',tf[a])
+		print("-------------------------------------------------------------------------")
+'''
+	tfIDFs = []
+	for tf in tfComputations:
+		tfIDFs.append(computeTFIDF(tf,idf))
+	for tfs in tfIDFs:
+		for a in tfs:
+			if tfs[a] > .1:
+				print(a,'\t',tfs[a])
+		print("-------------------------------------------------------------------------")
 
 
 
