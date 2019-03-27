@@ -23,7 +23,6 @@ def createStopList():
 	return stopWords
 	f0.close()
 
-
 def createDictionaryForFile(file):
 	freq = {}
 	for line in file:
