@@ -4,6 +4,19 @@ import math
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
+
+#look at this and figure out how it works
+from sklearn.decomposition import PCA
+
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+
+import numpy
+from scipy import sparse
+
 fullListFreq = {}
 
 
@@ -52,7 +65,10 @@ def getAllEssays():
 				if "final" in file:
 					currentEssay = []
 					openEssay = open(file,"r")
+					lines = ""
 					for line in openEssay:
+						#lines +=line
+						#sentenceList.append(line)
 						line2 = line.translate(str.maketrans('','', "(,),\',\",!,@,#,$,%,^,&,*,{,},{,},-,_,=,+,;,:,,,.,<,>,/,?,\\,|,`,~,\n"))
 						splitLine = line2.split(" ")
 						if splitLine != ['\n']:
@@ -60,6 +76,7 @@ def getAllEssays():
 								currentEssay.append(word.lower())
 					allEssays.append(currentEssay)
 					openEssay.close()
+					#sentenceList.append(lines)
 	return allEssays
 def tfComputation(docFreqList, document):
 	tf = {}
@@ -81,10 +98,10 @@ def computeTDF(essayList):
 		idf[word] = math.log(n / float(v))
 	return idf
 def computeTFIDF(tf,idf):
-    tf_idf = dict.fromkeys(tf.keys(), 0)
+    tf_idf = dict.fromkeys(idf.keys(), 0)
     for word, v in tf.items():
         tf_idf[word] = v * idf[word]
-    return tf_idf
+    return tf_idf.items()
 
 
 
@@ -111,8 +128,8 @@ def main():
 	print("DONE\n")
 	end2 = time.time()
 	print("Time to load all essays  (seconds):\t",round(end2 - start,15),'\telap:\t',round(end2-end1,15))
+		
 	
-
 	#remove all of the stop words within each essay
 	statement = "Remove all stop words from Essays"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -122,7 +139,7 @@ def main():
 	end3 = time.time()
 	print("Time to remove stop words(seconds):\t",round(end3 - start,15),'\telap:\t',round(end3-end2,15))
 
-
+	
 	#convert each essay into a list of (word,freq) tuples
 	statement = "Convert each essay to freqCounts"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -158,20 +175,23 @@ def main():
 	print("Time to create TF's      (seconds):\t",round(end6 - start,15),'\telap:\t',round(end6-end5,15))
 
 
-	'''for tf in tfComputations:
-		for a in tf:
-			print(a,'\t',tf[a])
-		print("-------------------------------------------------------------------------")
-'''
+
 	tfIDFs = []
 	for tf in tfComputations:
 		tfIDFs.append(computeTFIDF(tf,idf))
-	for tfs in tfIDFs:
-		for a in tfs:
-			if tfs[a] > .1:
-				print(a,'\t',tfs[a])
-		print("-------------------------------------------------------------------------")
 
+
+	matrix = []
+	for essay in tfIDFs:
+		docLine = []
+		for word in essay:
+			#print(word[1])
+			docLine.append(word[1])
+		matrix.append(docLine)
+
+
+	docMatrixDense = numpy.matrixlib.defmatrix.matrix(matrix)
+	docMatrixSparse = sparse.csr_matrix(docMatrixDense)
 
 
 	count = 0
@@ -181,6 +201,41 @@ def main():
 
 
 
+
+
+
+	# create k-means model with custom config
+	clustering_model = KMeans(
+	    n_clusters=10,
+	    max_iter=100
+	)
+
+	labels = clustering_model.fit_predict(docMatrixSparse)
+	print(labels)
+	X = docMatrixDense
+
+	# ----------------------------------------------------------------------------------------------------------------------
+
+	reduced_data = PCA(n_components=2).fit_transform(X)
+	# print reduced_data
+	labels_color_map = {
+	    0: '#20b2aa', 1: '#ff7373', 2: '#ffe4e1', 3: '#005073', 4: '#4d0404',
+	    5: '#ccc0ba', 6: '#4700f9', 7: '#f6f900', 8: '#00f91d', 9: '#da8c49'
+	}
+	fig, ax = plt.subplots()
+	for index, instance in enumerate(reduced_data):
+	    # print instance, index, labels[index]
+	    pca_comp_1, pca_comp_2 = reduced_data[index]
+	    color = labels_color_map[labels[index]]
+	    ax.scatter(pca_comp_1, pca_comp_2, c=color, s=10)
+	plt.show()
+	'''
+	# t-SNE plot
+	embeddings = TSNE(n_components=tsne_num_components)
+	Y = embeddings.fit_transform(X)
+	plt.scatter(Y[:, 0], Y[:, 1], cmap=plt.cm.Spectral)
+	plt.show()
+	'''
 
 	print("amount of total words :\t",count)
 	print("Amount of unique word2:\t",len(fullListFreq))
