@@ -15,6 +15,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
 import numpy as np
+from scipy.spatial import ConvexHull
 
 import numpy
 from scipy import sparse
@@ -64,20 +65,20 @@ def getAllEssays():
 			dirs = os.listdir( path )
 			for currfile in dirs:
 				file = path+"/"+currfile
-				if "final" in file:
-					currentEssay = []
-					openEssay = open(file,"r")
-					lines = ""
-					for line in openEssay:
-						#lines +=line
-						#sentenceList.append(line)
-						line2 = line.translate(str.maketrans('','', "(,),\',\",!,@,#,$,%,^,&,*,{,},{,},-,_,=,+,;,:,,,.,<,>,/,?,\\,|,`,~,\n"))
-						splitLine = line2.split(" ")
-						if splitLine != ['\n']:
-							for word in splitLine:
-								currentEssay.append(word.lower())
-					allEssays.append(currentEssay)
-					openEssay.close()
+				#if "final" in file:
+				currentEssay = []
+				openEssay = open(file,"r")
+				lines = ""
+				for line in openEssay:
+					#lines +=line
+					#sentenceList.append(line)
+					line2 = line.translate(str.maketrans('','', "(,),\',\",!,@,#,$,%,^,&,*,{,},{,},-,_,=,+,;,:,,,.,<,>,/,?,\\,|,`,~,\n"))
+					splitLine = line2.split(" ")
+					if splitLine != ['\n']:
+						for word in splitLine:
+							currentEssay.append(word.lower())
+				allEssays.append(currentEssay)
+				openEssay.close()
 					#sentenceList.append(lines)
 	return allEssays
 def tfComputation(docFreqList, document):
@@ -103,7 +104,25 @@ def computeTFIDF(tf,idf):
     tf_idf = dict.fromkeys(idf.keys(), 0)
     for word, v in tf.items():
         tf_idf[word] = v * idf[word]
-    return tf_idf.items()
+    return list(map(list, tf_idf.items()))
+
+
+def getCombinedTFIDF(cluster,allTFIDFS):
+	newDict = dict(fullListFreq)
+	for word in newDict:
+		newDict[word] = 0
+	dictAsList = list(map(list, newDict.items()))
+	for x in range(len(cluster)):
+		for i in range(len(dictAsList)):
+			dictAsList[i][1] += allTFIDFS[int(cluster[x])][i][1]
+	#for l in dictAsList:
+#		if l[1] >= .3:
+#			print(l)
+	dictAsList.sort(key = lambda x: x[1], reverse = True) 
+	#print("-------------------")
+	#for ele in  dictAsList[:15]:
+	#	print(ele)
+
 
 
 
@@ -206,20 +225,13 @@ def main():
 
 
 
-	reduced_data1 = PCA(n_components=2).fit_transform(docMatrixDense)
+	#reduced_data = PCA(n_components=2).fit_transform(docMatrixDense)
 	reduced_data = TSNE(n_components=2).fit_transform(docMatrixDense)
-	K = 3
-	kmeans_model = KMeans(n_clusters=8).fit(reduced_data)
+
+	clusterSize = 8
+	
 	print(reduced_data)
-
-
 	
-
-	points = []
-	
-	#for a in reduced_data:
-#		points.append((list(a)[0],list(a)[1]))
-#	plt.scatter(*zip(*points))
 
 
 	
@@ -227,26 +239,30 @@ def main():
 	statement = "doing kMeans"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
 
-	clustering_model = KMeans(
-	    n_clusters=8,
-	    max_iter=100000
-	)
-	#labels = clustering_model.fit_predict(reduced_data)
+
+	kmeans_model = KMeans(n_clusters=clusterSize).fit(reduced_data)
 	labels = kmeans_model.labels_
 	centers = np.array(kmeans_model.cluster_centers_)
-	print(labels)
-	print()
+	print(centers)
 
 	print("DONE\n")
 	end9 = time.time()
 	print("Time to create kMeans    (seconds):\t",round(end9 - start,15),'\telap:\t',round(end9-end8,15))
+	
 
+
+	print(list(labels))
+
+	#put all of the documents that were connected together
+	clusterLists = [[] for _ in range(clusterSize)]
+	for i in range(len(labels)):
+		clusterLists[labels[i]].append(str(i))
+	#go through each cluster and combine all of the tfidfs that we found
+	for cluster in clusterLists:
+		getCombinedTFIDF(cluster,tfIDFs)
 
 	X = docMatrixDense
 
-	# ----------------------------------------------------------------------------------------------------------------------
-
-	#reduced_data = PCA(n_components=2).fit_transform(X)
 	# print reduced_data
 	labels_color_map = {
 	    0: '#c687c5', 1: '#ffbb00', 2: '#e1ff00', 3: '#94ff00', 4: '#00ffb2',
@@ -257,9 +273,21 @@ def main():
 	    # print instance, index, labels[index]
 	    pca_comp_1, pca_comp_2 = reduced_data[index]
 	    color = labels_color_map[labels[index]]
-	    ax.scatter(pca_comp_1, pca_comp_2, c=color, s=45)
+	    ax.scatter(pca_comp_1, pca_comp_2 , c=color, s=15)
+	    #ax.annotate(index,(pca_comp_1, pca_comp_2))
 
 	plt.scatter(centers[:,0], centers[:,1], marker="x", color='r',s = 100)
+
+
+	hull = ConvexHull(centers)
+	for simplex in hull.simplices:  
+		plt.plot(centers[simplex, 0], centers[simplex, 1], 'k-')
+	plt.plot(centers[hull.vertices,0], centers[hull.vertices,1], 'r--', lw=2)
+
+
+	clusterPoints = [[] for _ in range(clusterSize)] 
+
+
 	'''
 	# t-SNE plot
 	embeddings = TSNE(n_components=tsne_num_components)
