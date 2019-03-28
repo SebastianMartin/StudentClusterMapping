@@ -14,6 +14,8 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
+import numpy as np
+
 import numpy
 from scipy import sparse
 
@@ -174,13 +176,21 @@ def main():
 	end6 = time.time()
 	print("Time to create TF's      (seconds):\t",round(end6 - start,15),'\telap:\t',round(end6-end5,15))
 
-
-
+	#Get the TF-IDF of each document
+	statement = "Get the TF-IDF computations"
+	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
 	tfIDFs = []
 	for tf in tfComputations:
 		tfIDFs.append(computeTFIDF(tf,idf))
+	print("DONE\n")
+	end7 = time.time()
+	print("Time to create  TF-IDF's (seconds):\t",round(end7 - start,15),'\telap:\t',round(end7-end6,15))
 
 
+
+	#Get the full matrix
+	statement = "Generate complete matrix's"
+	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
 	matrix = []
 	for essay in tfIDFs:
 		docLine = []
@@ -188,47 +198,68 @@ def main():
 			#print(word[1])
 			docLine.append(word[1])
 		matrix.append(docLine)
-
-
 	docMatrixDense = numpy.matrixlib.defmatrix.matrix(matrix)
 	docMatrixSparse = sparse.csr_matrix(docMatrixDense)
+	print("DONE\n")
+	end8 = time.time()
+	print("Time to create Matrix    (seconds):\t",round(end8 - start,15),'\telap:\t',round(end8-end7,15))
 
 
-	count = 0
-	for essay in freqCounts:
-		count+=len(essay)
+
+	reduced_data1 = PCA(n_components=2).fit_transform(docMatrixDense)
+	reduced_data = TSNE(n_components=2).fit_transform(docMatrixDense)
+	K = 3
+	kmeans_model = KMeans(n_clusters=8).fit(reduced_data)
+	print(reduced_data)
+
+
 	
 
+	points = []
+	
+	#for a in reduced_data:
+#		points.append((list(a)[0],list(a)[1]))
+#	plt.scatter(*zip(*points))
 
 
+	
+	#doing kmeans
+	statement = "doing kMeans"
+	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
 
-
-
-	# create k-means model with custom config
 	clustering_model = KMeans(
-	    n_clusters=10,
-	    max_iter=100
+	    n_clusters=8,
+	    max_iter=100000
 	)
-
-	labels = clustering_model.fit_predict(docMatrixSparse)
+	#labels = clustering_model.fit_predict(reduced_data)
+	labels = kmeans_model.labels_
+	centers = np.array(kmeans_model.cluster_centers_)
 	print(labels)
+	print()
+
+	print("DONE\n")
+	end9 = time.time()
+	print("Time to create kMeans    (seconds):\t",round(end9 - start,15),'\telap:\t',round(end9-end8,15))
+
+
 	X = docMatrixDense
 
 	# ----------------------------------------------------------------------------------------------------------------------
 
-	reduced_data = PCA(n_components=2).fit_transform(X)
+	#reduced_data = PCA(n_components=2).fit_transform(X)
 	# print reduced_data
 	labels_color_map = {
-	    0: '#20b2aa', 1: '#ff7373', 2: '#ffe4e1', 3: '#005073', 4: '#4d0404',
-	    5: '#ccc0ba', 6: '#4700f9', 7: '#f6f900', 8: '#00f91d', 9: '#da8c49'
+	    0: '#c687c5', 1: '#ffbb00', 2: '#e1ff00', 3: '#94ff00', 4: '#00ffb2',
+	    5: '#0090ff', 6: '#7200ff', 7: '#f600ff', 8: '#44440d', 9: '#7c8ea5'
 	}
 	fig, ax = plt.subplots()
 	for index, instance in enumerate(reduced_data):
 	    # print instance, index, labels[index]
 	    pca_comp_1, pca_comp_2 = reduced_data[index]
 	    color = labels_color_map[labels[index]]
-	    ax.scatter(pca_comp_1, pca_comp_2, c=color, s=10)
-	plt.show()
+	    ax.scatter(pca_comp_1, pca_comp_2, c=color, s=45)
+
+	plt.scatter(centers[:,0], centers[:,1], marker="x", color='r',s = 100)
 	'''
 	# t-SNE plot
 	embeddings = TSNE(n_components=tsne_num_components)
@@ -237,11 +268,16 @@ def main():
 	plt.show()
 	'''
 
+
+	count = 0
+	for essay in allEssays:
+		count+=len(essay)
 	print("amount of total words :\t",count)
 	print("Amount of unique word2:\t",len(fullListFreq))
 	print("essays checked        :\t",len(allEssays))
 	end = time.time()
 	print("Total Elapsed Time       (seconds):\t",round(end - start,15))
+	plt.show()
 
 
 
