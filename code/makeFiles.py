@@ -278,25 +278,19 @@ def main():
 	plt.scatter(centers[:,0], centers[:,1], marker="x", color='r',s = 100)
 
 
-	hull = ConvexHull(centers)
-	for simplex in hull.simplices:  
-		plt.plot(centers[simplex, 0], centers[simplex, 1], 'k-')
-	plt.plot(centers[hull.vertices,0], centers[hull.vertices,1], 'r--', lw=2)
+
 
 
 	clusterPoints = [[] for _ in range(clusterSize)] 
 	for i in range(len(labels)):
-		clusterPoints[labels[i]].append(numpy.ndarray(reduced_data[i]))
-	for cluster in clusterPoints:
-		print(type(cluster))
-		for point in cluster:
-			print(type(point))
-		'''
-		hull = ConvexHull(cluster)
+		clusterPoints[labels[i]].append(reduced_data[i])
+	for i in range(len(clusterPoints)):
+		clusterArray = np.asarray(clusterPoints[i])		
+		hull = ConvexHull(clusterArray)
 		for simplex in hull.simplices:  
-			plt.plot(cluster[simplex, 0], cluster[simplex, 1], 'k-')
-		plt.plot(cluster[hull.vertices,0], cluster[hull.vertices,1], 'r--', lw=2)'''
-
+			plt.plot(clusterArray[simplex, 0], clusterArray[simplex, 1], labels_color_map[i])
+		plt.plot(clusterArray[hull.vertices,0], clusterArray[hull.vertices,1], labels_color_map[i], label="cluster: " + str(i) + "  |  Area: "+ str(hull.area))
+	plt.gca().legend()
 
 
 	'''
