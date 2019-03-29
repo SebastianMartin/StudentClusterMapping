@@ -1,10 +1,11 @@
 from scipy.spatial import ConvexHull
 import numpy as np
-pointa = np.random.rand(30, 2)   # 30 random points in 2-D
+pointa = np.random.rand(100, 2)   # 30 random points in 2-D
 points = []
 for point in pointa:
 	points.append(point)
 pointss = np.asarray(points)
+print(pointss)
 
 hull = ConvexHull(pointss)
 import matplotlib.pyplot as plt

@@ -7,11 +7,7 @@ import matplotlib.pyplot as plt
 
 #look at this and figure out how it works
 from sklearn.decomposition import PCA
-
-
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
 import numpy as np
@@ -70,8 +66,6 @@ def getAllEssays():
 				openEssay = open(file,"r")
 				lines = ""
 				for line in openEssay:
-					#lines +=line
-					#sentenceList.append(line)
 					line2 = line.translate(str.maketrans('','', "(,),\',\",!,@,#,$,%,^,&,*,{,},{,},-,_,=,+,;,:,,,.,<,>,/,?,\\,|,`,~,\n"))
 					splitLine = line2.split(" ")
 					if splitLine != ['\n']:
@@ -79,7 +73,6 @@ def getAllEssays():
 							currentEssay.append(word.lower())
 				allEssays.append(currentEssay)
 				openEssay.close()
-					#sentenceList.append(lines)
 	return allEssays
 def tfComputation(docFreqList, document):
 	tf = {}
@@ -115,13 +108,8 @@ def getCombinedTFIDF(cluster,allTFIDFS):
 	for x in range(len(cluster)):
 		for i in range(len(dictAsList)):
 			dictAsList[i][1] += allTFIDFS[int(cluster[x])][i][1]
-	#for l in dictAsList:
-#		if l[1] >= .3:
-#			print(l)
 	dictAsList.sort(key = lambda x: x[1], reverse = True) 
-	#print("-------------------")
-	#for ele in  dictAsList[:15]:
-	#	print(ele)
+	return dictAsList
 
 
 
@@ -221,46 +209,66 @@ def main():
 	print("Time to create Matrix    (seconds):\t",round(end8 - start,15),'\telap:\t',round(end8-end7,15))
 
 #-----------------------------------------------------------------------------------------------------------
+	#reduce the dimensions of the
+	statement = "Reduce the dimensions to 2"
+	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
+	matrix = []
 
 	#reduced_data = PCA(n_components=2).fit_transform(docMatrixDense)
 	reduced_data = TSNE(n_components=2).fit_transform(docMatrixDense)
 
-	clusterSize = 8
-	
-	print(reduced_data)
-	print(type(reduced_data))
+	print("DONE\n")
+	end9 = time.time()
+	print("Time to reduce dimensions(seconds):\t",round(end9 - start,15),'\telap:\t',round(end9-end8,15))
 
-	
+#-----------------------------------------------------------------------------------------------------------
 
-
-	
 	#doing kmeans
 	statement = "doing kMeans"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
 
-
+	clusterSize = 10
 	kmeans_model = KMeans(n_clusters=clusterSize).fit(reduced_data)
 	labels = kmeans_model.labels_
 	centers = np.array(kmeans_model.cluster_centers_)
-	print(centers)
 
 	print("DONE\n")
-	end9 = time.time()
-	print("Time to create kMeans    (seconds):\t",round(end9 - start,15),'\telap:\t',round(end9-end8,15))
-	
+	end10 = time.time()
+	print("Time to create kMeans    (seconds):\t",round(end10 - start,15),'\telap:\t',round(end10-end9,15))
 
-
-	print(list(labels))
+#-----------------------------------------------------------------------------------------------------------
 
 	#put all of the documents that were connected together
+	statement = "grouping Clusers"
+	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
+
 	clusterLists = [[] for _ in range(clusterSize)]
 	for i in range(len(labels)):
 		clusterLists[labels[i]].append(str(i))
-	#go through each cluster and combine all of the tfidfs that we found
-	for cluster in clusterLists:
-		getCombinedTFIDF(cluster,tfIDFs)
 
-	X = docMatrixDense
+	print("DONE\n")
+	end11 = time.time()
+	print("Time to group clusters  (seconds):\t",round(end11 - start,15),'\telap:\t',round(end11-end10,15))
+
+#-----------------------------------------------------------------------------------------------------------
+
+	#go through each cluster and combine all of the tfidfs that we found
+	statement = "grouping TF-IDF's"
+	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
+
+	clusterTFIDFS = []
+	for cluster in clusterLists:
+		clusterTFIDFS.append(getCombinedTFIDF(cluster,tfIDFs))
+
+	print("DONE\n")
+	end12 = time.time()
+	print("Time to group TF-IDF's  (seconds):\t",round(end12 - start,15),'\telap:\t',round(end12-end11,15))
+
+
+
+#-----------------------------------------------------------------------------------------------------------
+
+	#Printing the plots and the chart and the hull
 
 	# print reduced_data
 	labels_color_map = {
@@ -293,14 +301,6 @@ def main():
 	plt.gca().legend()
 
 
-	'''
-	# t-SNE plot
-	embeddings = TSNE(n_components=tsne_num_components)
-	Y = embeddings.fit_transform(X)
-	plt.scatter(Y[:, 0], Y[:, 1], cmap=plt.cm.Spectral)
-	plt.show()
-	'''
-
 
 	count = 0
 	for essay in allEssays:
@@ -310,6 +310,21 @@ def main():
 	print("essays checked        :\t",len(allEssays))
 	end = time.time()
 	print("Total Elapsed Time       (seconds):\t",round(end - start,15))
+
+
+	emptyWord = "                                      "
+	print(len(clusterTFIDFS))
+	dashWord = "________________________________"
+	for j in range(len(clusterTFIDFS)-1):
+		currWord = "cluster-"+str(j)
+		print(currWord+dashWord[:15-len(currWord)] + "|", end ="",flush=True )
+	print("cluster-"+str(len(clusterTFIDFS)-1)+dashWord[:15-len("cluster-"+str(len(clusterTFIDFS)-1))])
+	for i in range(15):
+		for j in range(len(clusterTFIDFS)-1):
+			word = clusterTFIDFS[j][i][0]
+			print(word+emptyWord[:15-len(word)] + "|", end ="",flush=True )
+		print(clusterTFIDFS[len(clusterTFIDFS)-1][i][0])
+	
 	plt.show()
 
 
