@@ -132,16 +132,18 @@ def main():
 	start = time.time()
 	dotWord = "...................................................."
 
-
+#-----------------------------------------------------------------------------------------------------------
 	#get List of all stop words
 	statement = "create stop word list"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
+
 	stopWords = createStopList()
 	end1 = time.time()
+
 	print("DONE\n")
 	print("Time to load stop words  (seconds):\t",round(end1 - start,15),'\telap:\t',round(end1-start,15))
 	
-
+#-----------------------------------------------------------------------------------------------------------
 	#get 2d list of all words in all essays
 	statement = "Loading all Student Essays"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -150,7 +152,7 @@ def main():
 	end2 = time.time()
 	print("Time to load all essays  (seconds):\t",round(end2 - start,15),'\telap:\t',round(end2-end1,15))
 		
-	
+#-----------------------------------------------------------------------------------------------------------
 	#remove all of the stop words within each essay
 	statement = "Remove all stop words from Essays"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -160,7 +162,7 @@ def main():
 	end3 = time.time()
 	print("Time to remove stop words(seconds):\t",round(end3 - start,15),'\telap:\t',round(end3-end2,15))
 
-	
+#-----------------------------------------------------------------------------------------------------------
 	#convert each essay into a list of (word,freq) tuples
 	statement = "Convert each essay to freqCounts"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -171,10 +173,7 @@ def main():
 	end4 = time.time()
 	print("Time to create freq count(seconds):\t",round(end4 - start,15),'\telap:\t',round(end4-end3,15))
 
-	#sortedDict = sorted(fullListFreq.items(), key=lambda item: item[1],reverse = True)
-
-
-
+#-----------------------------------------------------------------------------------------------------------
 	#Get the IDF of all the terms
 	statement = "Get the IDF computation"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -183,8 +182,7 @@ def main():
 	end5 = time.time()
 	print("Time to create IDF       (seconds):\t",round(end5 - start,15),'\telap:\t',round(end5-end4,15))
 
-
-
+#-----------------------------------------------------------------------------------------------------------
 	#Get the IDF of all the terms
 	statement = "Get the TF computations"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -205,8 +203,7 @@ def main():
 	end7 = time.time()
 	print("Time to create  TF-IDF's (seconds):\t",round(end7 - start,15),'\telap:\t',round(end7-end6,15))
 
-
-
+#-----------------------------------------------------------------------------------------------------------
 	#Get the full matrix
 	statement = "Generate complete matrix's"
 	print(statement+dotWord[:50-len(statement)], end =" ",flush=True)
@@ -223,7 +220,7 @@ def main():
 	end8 = time.time()
 	print("Time to create Matrix    (seconds):\t",round(end8 - start,15),'\telap:\t',round(end8-end7,15))
 
-
+#-----------------------------------------------------------------------------------------------------------
 
 	#reduced_data = PCA(n_components=2).fit_transform(docMatrixDense)
 	reduced_data = TSNE(n_components=2).fit_transform(docMatrixDense)
@@ -231,6 +228,8 @@ def main():
 	clusterSize = 8
 	
 	print(reduced_data)
+	print(type(reduced_data))
+
 	
 
 
@@ -286,6 +285,18 @@ def main():
 
 
 	clusterPoints = [[] for _ in range(clusterSize)] 
+	for i in range(len(labels)):
+		clusterPoints[labels[i]].append(numpy.ndarray(reduced_data[i]))
+	for cluster in clusterPoints:
+		print(type(cluster))
+		for point in cluster:
+			print(type(point))
+		'''
+		hull = ConvexHull(cluster)
+		for simplex in hull.simplices:  
+			plt.plot(cluster[simplex, 0], cluster[simplex, 1], 'k-')
+		plt.plot(cluster[hull.vertices,0], cluster[hull.vertices,1], 'r--', lw=2)'''
+
 
 
 	'''
